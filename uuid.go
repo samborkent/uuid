@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"sync"
 	"time"
@@ -13,6 +14,14 @@ import (
 )
 
 type UUID [16]byte
+
+func ToUUID(bytes []byte) (UUID, error) {
+	if err := IsValid(bytes); err != nil {
+		return UUID{}, fmt.Errorf("invalid uuid: %w", err)
+	}
+
+	return UUID(bytes), nil
+}
 
 func New() UUID {
 	switch currentVersion {
