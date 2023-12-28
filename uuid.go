@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math"
-	"sync"
 	"time"
 	"unsafe"
 
@@ -15,6 +14,7 @@ import (
 
 type UUID [16]byte
 
+// ToUUID safely converts a byte slice to a UUID with validation.
 func ToUUID(bytes []byte) (UUID, error) {
 	if err := IsValid(bytes); err != nil {
 		return UUID{}, fmt.Errorf("invalid uuid: %w", err)
@@ -23,6 +23,9 @@ func ToUUID(bytes []byte) (UUID, error) {
 	return UUID(bytes), nil
 }
 
+// New returns a UUID based on the current version.
+// The current version can be set with SetVersion. It defaults to version 7.
+// Alternatively, the explicit functions NewV4, NewV7, and NewV8 can be used.
 func New() UUID {
 	switch currentVersion {
 	case Version4:
@@ -36,13 +39,7 @@ func New() UUID {
 	}
 }
 
-var version4Pool = sync.Pool{
-	New: func() any {
-		randBuf := make([]byte, 16)
-		return &randBuf
-	},
-}
-
+// NewV4 generates a new version 4 UUID.
 func NewV4() UUID {
 	uuid := make([]byte, 16)
 
@@ -69,13 +66,10 @@ func NewV4() UUID {
 	return UUID(uuid)
 }
 
-var version7Pool = sync.Pool{
-	New: func() any {
-		randBuf := make([]byte, 8)
-		return &randBuf
-	},
-}
-
+// NewV7 generates a new version 7 UUID.
+//
+// It generates a UUID based on the current Unix millisecond timestamp and a
+// sequence number derived from the fraction to the next millisecond.
 func NewV7() UUID {
 	uuid := make([]byte, 16)
 
@@ -119,11 +113,14 @@ func NewV7() UUID {
 	return UUID(uuid)
 }
 
+// NewV8 generates a new V8 UUID.
+//
+// It inserts the Unix nano timestamp into the first 64 bits. The precision of this timestamp is platform dependend.
+// It generates fast pseodo-random number using xoshiro256++ algorithm.
 func NewV8() UUID {
 	uuid := make([]byte, 16)
 
-	// Put unix nano timestamp into first 64 bits// Write variant bits into bits 65 and 66
-	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
+	// Put unix nano timestamp into first 64 bits
 	binary.BigEndian.PutUint64(uuid[:8], uint64(time.Now().UnixNano()))
 
 	// Set version 8 bits into bits 49 to 52

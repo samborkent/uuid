@@ -3,8 +3,23 @@ package uuid
 import (
 	"encoding/binary"
 	"encoding/hex"
+	"sync"
 	"time"
 )
+
+var version4Pool = sync.Pool{
+	New: func() any {
+		randBuf := make([]byte, 16)
+		return &randBuf
+	},
+}
+
+var version7Pool = sync.Pool{
+	New: func() any {
+		randBuf := make([]byte, 8)
+		return &randBuf
+	},
+}
 
 // Only has an millisecond accuracy as defined by UUID v7 proposal
 func (uuid UUID) creationTimeV7() time.Time {
