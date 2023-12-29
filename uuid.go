@@ -9,7 +9,7 @@ import (
 	"time"
 	"unsafe"
 
-	xsr256pp "github.com/samborkent/uuid/xrs256pp"
+	xsr256pp "github.com/samborkent/uuid/xsr256pp"
 )
 
 type UUID [16]byte
