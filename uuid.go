@@ -4,50 +4,28 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"math"
-	"sync"
 	"time"
 	"unsafe"
 
-	xsr256pp "github.com/samborkent/uuid/xrs256pp"
+	xsr256pp "github.com/samborkent/uuid/xsr256pp"
 )
 
 type UUID [16]byte
 
-type Version uint8
-
-const defaultVersion = Version7
-
-const (
-	Version4 Version = 4
-	Version7 Version = 7
-	Version8 Version = 8
-)
-
-var currentVersion = defaultVersion
-
-var (
-	ErrInvalidVersion  = errors.New("version not supported. must be 4, 7, or 8")
-	ErrNotTimeOrdered  = errors.New("uuid version is not time ordered")
-	ErrCompareVersions = errors.New("cannot compare different uuid versions")
-)
-
-// SetVersion sets the version of the application.
-//
-// It takes an integer value representing the version and returns an error.
-func SetVersion(version int) error {
-	newVersion := Version(version)
-
-	if newVersion != Version4 && newVersion != Version7 && newVersion != Version8 {
-		return ErrInvalidVersion
+// ToUUID safely converts a byte slice to a UUID with validation.
+func ToUUID(bytes []byte) (UUID, error) {
+	if err := IsValid(bytes); err != nil {
+		return UUID{}, fmt.Errorf("invalid uuid: %w", err)
 	}
 
-	currentVersion = newVersion
-
-	return nil
+	return UUID(bytes), nil
 }
 
+// New returns a UUID based on the current version.
+// The current version can be set with SetVersion. It defaults to version 7.
+// Alternatively, the explicit functions NewV4, NewV7, and NewV8 can be used.
 func New() UUID {
 	switch currentVersion {
 	case Version4:
@@ -61,13 +39,7 @@ func New() UUID {
 	}
 }
 
-var version4Pool = sync.Pool{
-	New: func() any {
-		randBuf := make([]byte, 16)
-		return &randBuf
-	},
-}
-
+// NewV4 generates a new version 4 UUID.
 func NewV4() UUID {
 	uuid := make([]byte, 16)
 
@@ -94,13 +66,10 @@ func NewV4() UUID {
 	return UUID(uuid)
 }
 
-var version7Pool = sync.Pool{
-	New: func() any {
-		randBuf := make([]byte, 8)
-		return &randBuf
-	},
-}
-
+// NewV7 generates a new version 7 UUID.
+//
+// It generates a UUID based on the current Unix millisecond timestamp and a
+// sequence number derived from the fraction to the next millisecond.
 func NewV7() UUID {
 	uuid := make([]byte, 16)
 
@@ -144,11 +113,14 @@ func NewV7() UUID {
 	return UUID(uuid)
 }
 
+// NewV8 generates a new V8 UUID.
+//
+// It inserts the Unix nano timestamp into the first 64 bits. The precision of this timestamp is platform dependend.
+// It generates fast pseodo-random number using xoshiro256++ algorithm.
 func NewV8() UUID {
 	uuid := make([]byte, 16)
 
-	// Put unix nano timestamp into first 64 bits// Write variant bits into bits 65 and 66
-	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
+	// Put unix nano timestamp into first 64 bits
 	binary.BigEndian.PutUint64(uuid[:8], uint64(time.Now().UnixNano()))
 
 	// Set version 8 bits into bits 49 to 52
@@ -225,29 +197,6 @@ func (uuid UUID) CreationTime() (time.Time, error) {
 	}
 }
 
-// Only has an millisecond accuracy as defined by UUID v7 proposal
-func (uuid UUID) creationTimeV7() time.Time {
-	var creationTimeBits [8]byte
-
-	copy(creationTimeBits[:], uuid[:8])
-
-	// Right shift timestamp bytes
-	rightShiftTimestamp(creationTimeBits[:])
-
-	return time.UnixMilli(int64(binary.BigEndian.Uint64(creationTimeBits[:]))).UTC()
-}
-
-// Only has an microsecond accuracy as time package does not provide UnixNano function,
-// as accuracy of Unix nano timestamp is determined by the OS,
-// and it is always greater than nanosecond precision
-func (uuid UUID) creationTimeV8() time.Time {
-	var creationTimeBits [8]byte
-
-	copy(creationTimeBits[:], uuid[:8])
-
-	return time.UnixMicro(int64(binary.BigEndian.Uint64(creationTimeBits[:]))).UTC()
-}
-
 // Last 12 characters of UUID
 // Useful for logging
 func (uuid UUID) Short() string {
@@ -265,29 +214,4 @@ func (uuid UUID) String() string {
 	encodeHex(buf, uuid)
 
 	return *(*string)(unsafe.Pointer(&buf))
-}
-
-// From github.com/google/uuid
-func encodeHex(dst []byte, uuid [16]byte) {
-	hex.Encode(dst, uuid[:4])
-	dst[8] = '-'
-	hex.Encode(dst[9:13], uuid[4:6])
-	dst[13] = '-'
-	hex.Encode(dst[14:18], uuid[6:8])
-	dst[18] = '-'
-	hex.Encode(dst[19:23], uuid[8:10])
-	dst[23] = '-'
-	hex.Encode(dst[24:], uuid[10:])
-}
-
-// Right shift timestamp bytes
-func rightShiftTimestamp(uuid []byte) {
-	uuid[7] = uuid[5]
-	uuid[6] = uuid[4]
-	uuid[5] = uuid[3]
-	uuid[4] = uuid[2]
-	uuid[3] = uuid[1]
-	uuid[2] = uuid[0]
-	uuid[1] = 0
-	uuid[0] = 0
 }
