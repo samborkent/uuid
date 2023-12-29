@@ -2,6 +2,7 @@
 
 This package implements UUID version 4 and 7, as defined by the latest draft of [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14).
 It also includes a custom implementation of UUID version 8, which is reserved for vendor specific UUID implementations.
+For all three UUID implementations special care was taken to maximize performance and get rid of any allocations.
 
 The SetVersion function can be used to set the default version for newly generated UUIDs. Currently, the following version are [4, 7, 8] supported, with 7 as default.
 A new UUID is generated with the New function.
@@ -88,3 +89,5 @@ BenchmarkUUIDV8Short-16                 429292722                2.775 ns/op    
 BenchmarkUUIDV8String-16                67370560                17.65 ns/op            0 B/op          0 allocs/op
 BenchmarkUUIDV8Version-16               1000000000               0.2588 ns/op          0 B/op          0 allocs/op
 ```
+
+From the benchmarks we can see that this UUID v8 implementation is about 7 times faster than both the UUID v4 and v7 implementations.
