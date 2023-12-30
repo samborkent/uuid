@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"math"
 	"time"
 	"unsafe"
@@ -13,15 +12,6 @@ import (
 )
 
 type UUID [16]byte
-
-// ToUUID safely converts a byte slice to a UUID with validation.
-func ToUUID(bytes []byte) (UUID, error) {
-	if err := IsValid(bytes); err != nil {
-		return UUID{}, fmt.Errorf("invalid uuid: %w", err)
-	}
-
-	return UUID(bytes), nil
-}
 
 // New returns a UUID based on the current version.
 // The current version can be set with SetVersion. It defaults to version 7.

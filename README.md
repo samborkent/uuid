@@ -33,17 +33,24 @@ The hyphen-delimited string representation of the UUID can be returned with the 
 uuidString := uuidV7.String()
 ```
 
-Another utility function that is provided is the Short method, which returns the last 12 characters of the UUID string, which is useful for logging or tracing purposes.
+Another utility function that is provided is the **Short** method, which returns the last 12 characters of the UUID string, which is useful for logging or tracing purposes.
 
 ```
 uuidShort := uuidV7.Short()
 ```
 
-There are also two validation methods provided to check whether a string or a byte array is a valid UUID, although only version 4, 7 and 8 are supported.
+There are also two validation methods **IsValid** and **IsValidString** provided to check whether a string or a byte array is a valid UUID, although only version 4, 7 and 8 are supported.
 
 ```
 isValid := uuid.IsValid(byteArray)
 isValidString := uuid.IsValidString(uuidString)
+```
+
+In case a byte slice or a string is a valid UUID v4, v7 or v8, it can be converted to a UUID with the **ToUUID** and **StringToUUID** functions. If the provided UUID is invalid, these functions will return an error.
+
+```
+uuid1, err := uuid.ToUUID(byteSlice)
+uuid2, err := uuid.StringToUUID(uuidString)
 ```
 
 ## Version 4
