@@ -4,8 +4,8 @@ This package implements UUID version 4 and 7, as defined by the latest draft of 
 It also includes a custom implementation of UUID version 8, which is reserved for vendor specific UUID implementations.
 For all three UUID implementations special care was taken to maximize performance and get rid of any allocations.
 
-The SetVersion function can be used to set the default version for newly generated UUIDs. Currently, the following version are [4, 7, 8] supported, with 7 as default.
-A new UUID is generated with the New function.
+The SetVersion function can be used to set the default version for newly generated UUIDs. Currently, the following version [4, 7, 8] are supported, with 7 as default.
+A new UUID is generated with the **New** function.
 
 ```
 // Set the version of newly generated UUIDs
@@ -15,19 +15,19 @@ uuid.SetVersion(7)
 uuidV7 := uuid.New()
 ```
 
-The version of the UUID can be extrated from the Version method, which just reads the version bits as defined in the UUID scheme.
+The version of the UUID can be extrated from the **Version** method.
 
 ```
 version := uuidV7.Version()
 ```
 
-For UUIDs with version 7 or 8 the creation time of the UUID can be extracted with the CreationTime method.
+For UUIDs with version 7 or 8 the creation time of the UUID can be extracted with the **CreationTime** method.
 
 ```
 creationTime := uuidV7.CreationTime()
 ```
 
-The hyphen-delimited string representation of the UUID can be returned with the String method:
+The hyphen-delimited string representation of the UUID can be returned with the **String** method:
 
 ```
 uuidString := uuidV7.String()
@@ -60,11 +60,11 @@ BenchmarkUUIDV4String-16                69654795                17.51 ns/op     
 
 ## Version 7
 
-This is the default version in this package. UUID v7 is newly defined in [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14) and should replace UUID v4 in most use-cases..
+This is the default version in this package. UUID v7 is newly defined in [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14) and should replace UUID v4 in most use-cases.
 UUID v7 provides several benefits compared to UUID v4:
 
-* It is lexicongraphically sortable.
-* It can function as an sequential identifier, a unique identifier, and a timestamp at the same time. Which enables you to combine these three fields into one for databases.
+* It is lexicographically sortable.
+* It can function as an sequential identifier, a unique identifier, and a timestamp at once. Which enables you to combine these three fields into one for databases.
 
 ```
 BenchmarkUUIDV7-16                       2984664               410.6 ns/op             0 B/op          0 allocs/op
@@ -76,11 +76,10 @@ BenchmarkUUIDV7Version-16               1000000000               0.2382 ns/op   
 
 ## Version 8
 
-UUID v4 and v7 require a crypographically secure pseudo-random number generator. In many cases this is not actually required and can be replaced for a faster less secure algorithm.
-Instead of the implementation in **crypto/rand** in the Go standard library, an implementation of the **xoshiro256++** algorithm is used.
-The scheme of this UUID v8 implementation is further simplified compared to the UUID v7 scheme by filling the first 64 bits with the Unix nanosecond timestamp, where the UUID version bits simply override the timestamp bits.
-The resolution of the Unix nanosecond timestamp is OS specific, but always greater than a single nanosecond in the order of 10s or 100s nanoseconds.
-Use this implementation is you do not require a cryptographically secure UUID and if you need to generate UUIDs at a very high frequency with very little overhead.
+UUID v4 and v7 require a crypographically secure pseudo-random number generator. In some cases a crypographically secure random number generator is not required and can be replaced for a faster less secure algorithm.
+In this specific implementation of UUID v8, the **xoshiro256++** algorithm is used for random number generation, instead of the **crypto/rand** package in the Go standard library.
+The scheme of this UUID v8 implementation is further simplified compared to the UUID v7 scheme by filling the first 64 bits with the Unix nanosecond timestamp instead of a Unix millisecond timestamp together with a sequence number. In this implementation the version bits simply override 4 bits of the Unix nanosecond timestamp. The resolution of the Unix nanosecond timestamp is OS specific, on some OS it is a single nanosecond, on Windows about 500 ns.
+Use this implementation if you do not require a cryptographically secure UUID and if you need to generate UUIDs at a very high frequency with very little overhead.
 
 ```
 BenchmarkUUIDV8-16                      20884886                56.36 ns/op            0 B/op          0 allocs/op
@@ -91,3 +90,9 @@ BenchmarkUUIDV8Version-16               1000000000               0.2588 ns/op   
 ```
 
 From the benchmarks we can see that this UUID v8 implementation is about 7 times faster than both the UUID v4 and v7 implementations.
+
+## Which version to use
+
+* UUID v4: If you need the highest level of crypographical security, choose UUID v4, as this has the maximum number (122) of CSPRNG bits, for example for API keys.
+* UUID v7: If you need need a unique identifier, while providing sequentiality, sortability, and being able to easily extract a timestamp, while still providing a high level of cryptographic security with 62 CSPRNG bits.
+* UUID v8: Only use this version if you are certain you will continue using this specific implementation. Suitable for when unique identifiers need to be generated at very high frequency and cryptographic security is not a priority.
