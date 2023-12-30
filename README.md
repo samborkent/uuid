@@ -1,5 +1,7 @@
 # UUID
 
+**The version 7 and 8 implementations in this package are based on a draft proposal, so they could possibly change in the future.**
+
 This package implements UUID version 4 and 7, as defined by the latest draft of [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14).
 It also includes a custom implementation of UUID version 8, which is reserved for vendor specific UUID implementations.
 For all three UUID implementations special care was taken to maximize performance and get rid of any allocations.
