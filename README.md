@@ -102,6 +102,6 @@ From the benchmarks we can see that this UUID v8 implementation is about 7 times
 
 ## Which version to use
 
-* UUID v4: If you need the highest level of crypographical security, choose UUID v4, as this has the maximum number (122) of CSPRNG bits, for example for API keys.
-* UUID v7: If you need need a unique identifier, while providing sequentiality, sortability, and being able to easily extract a timestamp, while still providing a high level of cryptographic security with 62 CSPRNG bits.
-* UUID v8: Only use this version if you are certain you will continue using this specific implementation. Suitable for when unique identifiers need to be generated at very high frequency and cryptographic security is not a priority.
+* **UUID v4** - If you need the highest level of crypographical security, as this has the maximum number (122) of CSPRNG bits, for example for API keys.
+* **UUID v7** - If you need need a unique identifier, while providing sequentiality, sortability, and being able to easily extract a timestamp, while still providing a high level of cryptographic security with 62 CSPRNG bits.
+* **UUID v8** - Only use this version if you are certain you will continue using this specific implementation. Suitable for when unique identifiers need to be generated at very high frequency and cryptographic security is not a priority.
