@@ -1,3 +1,4 @@
+// xoshiro256++ (https://prng.di.unimi.it/xoshiro256plusplus.c)
 package xsr256pp
 
 import "github.com/samborkent/uuid/splitmix64"
