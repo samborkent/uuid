@@ -5,10 +5,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"math"
+	mathrand "math/rand/v2"
 	"time"
 	"unsafe"
-
-	xsr256pp "github.com/samborkent/uuid/xsr256pp"
 )
 
 type UUID [16]byte
@@ -117,7 +116,7 @@ func NewV8() UUID {
 	uuid[6] = (uuid[6] & 0b10001111) | 0b10000000
 
 	// Set last 64 bits to a pseudo-random number determined by xoshiro256++ algorithm
-	binary.BigEndian.PutUint64(uuid[8:], xsr256pp.Next())
+	binary.BigEndian.PutUint64(uuid[8:], mathrand.Uint64())
 
 	// Write variant bits into bits 65 and 66
 	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
