@@ -6,46 +6,50 @@ import (
 	"github.com/samborkent/uuid"
 )
 
-func BenchmarkUUIDV7(t *testing.B) {
-	uuid.SetVersion(7)
+func TestUUIDV7(t *testing.T) {
+	t.Log(uuid.NewV7())
+}
 
-	for i := 0; i < t.N; i++ {
-		_ = uuid.New()
+func BenchmarkUUIDV7(t *testing.B) {
+	for range t.N {
+		_ = uuid.NewV7()
 	}
 }
 
 func BenchmarkUUIDV7CreationTime(t *testing.B) {
-	uuid.SetVersion(7)
-	uuidV7 := uuid.New()
+	uuidV7 := uuid.NewV7()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_, _ = uuidV7.CreationTime()
 	}
 }
 
 func BenchmarkUUIDV7Short(t *testing.B) {
-	uuid.SetVersion(7)
-	uuidV7 := uuid.New()
+	uuidV7 := uuid.NewV7()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV7.Short()
 	}
 }
 
 func BenchmarkUUIDV7String(t *testing.B) {
-	uuid.SetVersion(7)
-	uuidV7 := uuid.New()
+	uuidV7 := uuid.NewV7()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV7.String()
 	}
 }
 
-func BenchmarkUUIDV7Version(t *testing.B) {
-	uuid.SetVersion(7)
-	uuidV7 := uuid.New()
+func BenchmarkUUIDV7String2(t *testing.B) {
+	for range t.N {
+		_ = uuid.NewV7().String()
+	}
+}
 
-	for i := 0; i < t.N; i++ {
+func BenchmarkUUIDV7Version(t *testing.B) {
+	uuidV7 := uuid.NewV7()
+
+	for range t.N {
 		_ = uuidV7.Version()
 	}
 }

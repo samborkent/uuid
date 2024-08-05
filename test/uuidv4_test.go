@@ -7,36 +7,37 @@ import (
 )
 
 func BenchmarkUUIDV4(t *testing.B) {
-	uuid.SetVersion(4)
-
-	for i := 0; i < t.N; i++ {
-		_ = uuid.New()
+	for range t.N {
+		_ = uuid.NewV4()
 	}
 }
 
 func BenchmarkUUIDV4Short(t *testing.B) {
-	uuid.SetVersion(4)
-	uuidV4 := uuid.New()
+	uuidV4 := uuid.NewV4()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV4.Short()
 	}
 }
 
 func BenchmarkUUIDV4String(t *testing.B) {
-	uuid.SetVersion(4)
-	uuidV4 := uuid.New()
+	uuidV4 := uuid.NewV4()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV4.String()
 	}
 }
 
-func BenchmarkUUIDV4Version(t *testing.B) {
-	uuid.SetVersion(4)
-	uuidV4 := uuid.New()
+func BenchmarkUUIDV4String2(t *testing.B) {
+	for range t.N {
+		_ = uuid.NewV4().String()
+	}
+}
 
-	for i := 0; i < t.N; i++ {
+func BenchmarkUUIDV4Version(t *testing.B) {
+	uuidV4 := uuid.NewV4()
+
+	for range t.N {
 		_ = uuidV4.Version()
 	}
 }

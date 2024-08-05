@@ -73,10 +73,10 @@ func IsValid(uuid []byte) error {
 func isValidV4(uuid UUID) error {
 	testUUID := uuid
 
-	testUUID[6] = testUUID[6] & 0b10111111
-	testUUID[8] = testUUID[8] & 0b01111111
+	testUUID[6] &= 0b10111111
+	testUUID[8] &= 0b01111111
 
-	if binary.BigEndian.Uint64(testUUID[:]) == 0 {
+	if binary.LittleEndian.Uint64(testUUID[:]) == 0 {
 		return errors.New("uuid v4 should have non-zero random bits")
 	}
 
@@ -85,25 +85,23 @@ func isValidV4(uuid UUID) error {
 
 func isValidV7(uuid UUID) error {
 	var timestampBytes [8]byte
-
 	copy(timestampBytes[:], uuid[:8])
 
 	// Right shift timestamp bytes
 	rightShiftTimestamp(timestampBytes[:])
 
 	// Reject UUIDs from the future
-	if binary.BigEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixMilli()) {
+	if binary.LittleEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixMilli()) {
 		return errors.New("uuid v7 cannot have a future timestamp")
 	}
 
 	var randBytes [8]byte
-
 	copy(randBytes[:], uuid[8:])
 
-	randBytes[0] = randBytes[0] & 0b01111111
+	randBytes[0] &= 0b01111111
 
 	// Check if random bits are filled
-	if binary.BigEndian.Uint64(randBytes[:]) == 0 {
+	if binary.LittleEndian.Uint64(randBytes[:]) == 0 {
 		return errors.New("uuid v7 should have non-zero random bits")
 	}
 
@@ -112,27 +110,25 @@ func isValidV7(uuid UUID) error {
 
 func isValidV8(uuid UUID) error {
 	var timestampBytes [8]byte
-
 	copy(timestampBytes[:], uuid[:8])
 
 	// Right shift timestamp bytes
 	rightShiftTimestamp(timestampBytes[:])
 
-	timestampBytes[6] = timestampBytes[6] & 0b01111111
+	timestampBytes[6] &= 0b01111111
 
 	// Reject UUIDs from the future
-	if binary.BigEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixNano()) {
+	if binary.LittleEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixNano()) {
 		return errors.New("uuid v8 cannot have a future timestamp")
 	}
 
 	var randBytes [8]byte
-
 	copy(randBytes[:], uuid[8:])
 
-	randBytes[0] = randBytes[0] & 0b01111111
+	randBytes[0] &= 0b01111111
 
 	// Check if random bits are filled
-	if binary.BigEndian.Uint64(randBytes[:]) == 0 {
+	if binary.LittleEndian.Uint64(randBytes[:]) == 0 {
 		return errors.New("uuid v8 should have non-zero random bits")
 	}
 

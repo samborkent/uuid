@@ -1,8 +1,6 @@
 # UUID
 
-**This package is currently outdated, as it was based on a draft proposal. However, the accepted RFC has no significant changes. This package will be updated in the near future.**
-
-This package implements UUID version 4 and 7, as defined by the latest draft of [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14).
+This package implements UUID version 4 and 7, as defined by [RFC9562](https://datatracker.ietf.org/doc/html/rfc9562).
 It also includes a custom implementation of UUID version 8, which is reserved for vendor specific UUID implementations.
 For all three UUID implementations special care was taken to maximize performance and get rid of any allocations.
 
@@ -72,8 +70,8 @@ BenchmarkUUIDV4String-16                69654795                17.51 ns/op     
 This is the default version in this package. UUID v7 is newly defined in [RFC4122](https://datatracker.ietf.org/doc/html/draft-ietf-uuidrev-rfc4122bis-14) and should replace UUID v4 in most use-cases.
 UUID v7 provides several benefits compared to UUID v4:
 
-* It is lexicographically sortable.
-* It can function as an sequential identifier, a unique identifier, and a timestamp at once. Which enables you to combine these three fields into one for databases.
+- It is lexicographically sortable.
+- It can function as an sequential identifier, a unique identifier, and a timestamp at once. Which enables you to combine these three fields into one for databases.
 
 ```
 BenchmarkUUIDV7-16                       2984664               410.6 ns/op             0 B/op          0 allocs/op
@@ -102,6 +100,6 @@ From the benchmarks we can see that this UUID v8 implementation is about 7 times
 
 ## Which version to use
 
-* **UUID v4** - If you need the highest level of crypographical security, as this has the maximum number (122) of CSPRNG bits, for example for API keys.
-* **UUID v7** - If you need need a unique identifier, while providing sequentiality, sortability, and being able to easily extract a timestamp, while still providing a high level of cryptographic security with 62 CSPRNG bits.
-* **UUID v8** - Only use this version if you are certain you will continue using this specific implementation. Suitable for when unique identifiers need to be generated at very high frequency and cryptographic security is not a priority.
+- **UUID v4** - If you need the highest level of crypographical security, as this has the maximum number (122) of CSPRNG bits, for example for API keys.
+- **UUID v7** - If you need need a unique identifier, while providing sequentiality, sortability, and being able to easily extract a timestamp, while still providing a high level of cryptographic security with 62 CSPRNG bits.
+- **UUID v8** - Only use this version if you are certain you will continue using this specific implementation. Suitable for when unique identifiers need to be generated at very high frequency and cryptographic security is not a priority.
