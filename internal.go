@@ -24,7 +24,6 @@ var version7Pool = sync.Pool{
 // Only has an millisecond accuracy as defined by UUID v7 proposal
 func (uuid UUID) creationTimeV7() time.Time {
 	var creationTimeBits [8]byte
-
 	copy(creationTimeBits[:], uuid[:8])
 
 	// Right shift timestamp bytes
@@ -38,7 +37,6 @@ func (uuid UUID) creationTimeV7() time.Time {
 // and it is always greater than nanosecond precision
 func (uuid UUID) creationTimeV8() time.Time {
 	var creationTimeBits [8]byte
-
 	copy(creationTimeBits[:], uuid[:8])
 
 	return time.UnixMicro(int64(binary.BigEndian.Uint64(creationTimeBits[:]))).UTC()

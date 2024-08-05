@@ -10,7 +10,7 @@ import (
 func BenchmarkToUUID(t *testing.B) {
 	uuidV4 := uuidGoogle.New()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_, _ = uuid.ToUUID(uuidV4[:])
 	}
 }

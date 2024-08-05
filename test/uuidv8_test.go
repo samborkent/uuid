@@ -7,45 +7,45 @@ import (
 )
 
 func BenchmarkUUIDV8(t *testing.B) {
-	uuid.SetVersion(8)
-
-	for i := 0; i < t.N; i++ {
-		_ = uuid.New()
+	for range t.N {
+		_ = uuid.NewV8()
 	}
 }
 
 func BenchmarkUUIDV8CreationTime(t *testing.B) {
-	uuid.SetVersion(8)
-	uuidV8 := uuid.New()
+	uuidV8 := uuid.NewV8()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_, _ = uuidV8.CreationTime()
 	}
 }
 
 func BenchmarkUUIDV8Short(t *testing.B) {
-	uuid.SetVersion(8)
-	uuidV8 := uuid.New()
+	uuidV8 := uuid.NewV8()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV8.Short()
 	}
 }
 
 func BenchmarkUUIDV8String(t *testing.B) {
-	uuid.SetVersion(8)
-	uuidV8 := uuid.New()
+	uuidV8 := uuid.NewV8()
 
-	for i := 0; i < t.N; i++ {
+	for range t.N {
 		_ = uuidV8.String()
 	}
 }
 
-func BenchmarkUUIDV8Version(t *testing.B) {
-	uuid.SetVersion(8)
-	uuidV8 := uuid.New()
+func BenchmarkUUIDV8String2(t *testing.B) {
+	for range t.N {
+		_ = uuid.NewV8().String()
+	}
+}
 
-	for i := 0; i < t.N; i++ {
+func BenchmarkUUIDV8Version(t *testing.B) {
+	uuidV8 := uuid.NewV8()
+
+	for range t.N {
 		_ = uuidV8.Version()
 	}
 }

@@ -4,13 +4,25 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
+	"log/slog"
 	"math"
 	mathrand "math/rand/v2"
+	"sync/atomic"
 	"time"
 	"unsafe"
 )
 
 type UUID [16]byte
+
+var (
+	Max = UUID{
+		math.MaxUint8, math.MaxUint8, math.MaxUint8, math.MaxUint8,
+		math.MaxUint8, math.MaxUint8, math.MaxUint8, math.MaxUint8,
+		math.MaxUint8, math.MaxUint8, math.MaxUint8, math.MaxUint8,
+		math.MaxUint8, math.MaxUint8, math.MaxUint8, math.MaxUint8,
+	}
+	Nil = UUID{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+)
 
 // New returns a UUID based on the current version.
 // The current version can be set with SetVersion. It defaults to version 7.
@@ -55,6 +67,11 @@ func NewV4() UUID {
 	return UUID(uuid)
 }
 
+var (
+	prevUnixMilli      = new(atomic.Uint64)
+	prevSequenceNumber = new(atomic.Uint32)
+)
+
 // NewV7 generates a new version 7 UUID.
 //
 // It generates a UUID based on the current Unix millisecond timestamp and a
@@ -73,7 +90,7 @@ func NewV7() UUID {
 	uuid[4] = byte(unixMilli >> 8)
 	uuid[5] = byte(unixMilli)
 
-	sequenceNumber := uint16(4096 * milliFraction)
+	sequenceNumber := uint32(4096 * milliFraction)
 
 	// Big endian binary encoding of sequence number into bits 49 to 64
 	uuid[6] = byte(sequenceNumber >> 8)
@@ -95,6 +112,28 @@ func NewV7() UUID {
 
 	// Return buffer to pool
 	version7Pool.Put(randBufPtr)
+
+	// Copy count bytes
+	var countBytes [2]byte
+	copy(countBytes[:], uuid[8:9])
+
+	// Remove variant and count overflow bit
+	countBytes[0] &= 0b00011111
+
+	// Get count
+	var count uint16
+	binary.LittleEndian.PutUint16(countBytes[:], count)
+
+	// Increment count if UUID was created in the same timeframe
+	if unixMilli == prevUnixMilli.Swap(unixMilli) {
+		slog.Debug("time", "unixMilli", unixMilli, "sequenceNumber", sequenceNumber)
+
+		if sequenceNumber <= prevSequenceNumber.Swap(sequenceNumber) {
+			count++
+			uuid[8] = byte(count >> 8)
+			uuid[9] = byte(count)
+		}
+	}
 
 	// Write variant bits into bits 65 and 66
 	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
