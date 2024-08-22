@@ -7,8 +7,7 @@ import (
 )
 
 func BenchmarkIsValidV4(t *testing.B) {
-	_ = uuid.SetVersion(4)
-	uuidV4 := uuid.New()
+	uuidV4 := uuid.NewV4()
 
 	for range t.N {
 		_ = uuid.IsValid(uuidV4[:])
@@ -16,8 +15,7 @@ func BenchmarkIsValidV4(t *testing.B) {
 }
 
 func BenchmarkIsValidV4String(t *testing.B) {
-	_ = uuid.SetVersion(4)
-	uuidV4 := uuid.New().String()
+	uuidV4 := uuid.NewV4().String()
 
 	for range t.N {
 		_ = uuid.IsValidString(uuidV4)
@@ -25,8 +23,7 @@ func BenchmarkIsValidV4String(t *testing.B) {
 }
 
 func BenchmarkIsValidV7(t *testing.B) {
-	_ = uuid.SetVersion(7)
-	uuidV7 := uuid.New()
+	uuidV7 := uuid.NewV7()
 
 	for range t.N {
 		_ = uuid.IsValid(uuidV7[:])
@@ -34,8 +31,7 @@ func BenchmarkIsValidV7(t *testing.B) {
 }
 
 func BenchmarkIsValidV7String(t *testing.B) {
-	_ = uuid.SetVersion(7)
-	uuidV7 := uuid.New().String()
+	uuidV7 := uuid.NewV7().String()
 
 	for range t.N {
 		_ = uuid.IsValidString(uuidV7)
@@ -43,8 +39,7 @@ func BenchmarkIsValidV7String(t *testing.B) {
 }
 
 func BenchmarkIsValidV8(t *testing.B) {
-	_ = uuid.SetVersion(8)
-	uuidV8 := uuid.New()
+	uuidV8 := uuid.NewV8()
 
 	for range t.N {
 		_ = uuid.IsValid(uuidV8[:])
@@ -52,8 +47,7 @@ func BenchmarkIsValidV8(t *testing.B) {
 }
 
 func BenchmarkIsValidV8String(t *testing.B) {
-	_ = uuid.SetVersion(8)
-	uuidV8 := uuid.New().String()
+	uuidV8 := uuid.NewV8().String()
 
 	for range t.N {
 		_ = uuid.IsValidString(uuidV8)

@@ -23,23 +23,19 @@ var version7Pool = sync.Pool{
 
 // Only has an millisecond accuracy as defined by UUID v7 proposal
 func (uuid UUID) creationTimeV7() time.Time {
-	var creationTimeBits [8]byte
-	copy(creationTimeBits[:], uuid[:8])
-
 	// Right shift timestamp bytes
-	rightShiftTimestamp(creationTimeBits[:])
+	rightShiftTimestamp(uuid[:8])
 
-	return time.UnixMilli(int64(binary.BigEndian.Uint64(creationTimeBits[:]))).UTC()
+	return time.UnixMilli(int64(binary.BigEndian.Uint64(uuid[:8]))).UTC()
 }
 
 // Only has an microsecond accuracy as time package does not provide UnixNano function,
 // as accuracy of Unix nano timestamp is determined by the OS,
 // and it is always greater than nanosecond precision
 func (uuid UUID) creationTimeV8() time.Time {
-	var creationTimeBits [8]byte
-	copy(creationTimeBits[:], uuid[:8])
+	uuid[6] |= 0b0111_1111
 
-	return time.UnixMicro(int64(binary.BigEndian.Uint64(creationTimeBits[:]))).UTC()
+	return time.UnixMicro(int64(binary.BigEndian.Uint64(uuid[:8])) / 1000).UTC()
 }
 
 // From github.com/google/uuid
@@ -65,4 +61,20 @@ func rightShiftTimestamp(uuid []byte) {
 	uuid[2] = uuid[0]
 	uuid[1] = 0
 	uuid[0] = 0
+}
+
+func setVariantBits(b byte) byte {
+	return (b | 0b1000_0000) & 0b1011_1111
+}
+
+func setVersion4Bits(b byte) byte {
+	return (b | 0b0100_0000) & 0b0100_1111
+}
+
+func setVersion7Bits(b byte) byte {
+	return (b | 0b0111_0000) & 0b0111_1111
+}
+
+func setVersion8Bits(b byte) byte {
+	return (b | 0b1000_0000) & 0b1000_1111
 }
