@@ -11,6 +11,6 @@ func BenchmarkToUUID(t *testing.B) {
 	uuidV4 := uuidGoogle.New()
 
 	for range t.N {
-		_, _ = uuid.ToUUID(uuidV4[:])
+		_, _ = uuid.Parse(uuidV4[:])
 	}
 }

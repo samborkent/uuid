@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"log/slog"
 	"math"
 	mathrand "math/rand/v2"
 	"sync/atomic"
@@ -59,10 +58,10 @@ func NewV4() UUID {
 	version4Pool.Put(randBufPtr)
 
 	// Set version 4 bits
-	uuid[6] = (uuid[6] & 0b01001111) | 0b01000000
+	uuid[6] = setVersion4Bits(uuid[6])
 
 	// Set variant bits
-	uuid[8] = (uuid[6] & 0b10111111) | 0b10000000
+	uuid[8] = setVariantBits(uuid[8])
 
 	return UUID(uuid)
 }
@@ -70,6 +69,7 @@ func NewV4() UUID {
 var (
 	prevUnixMilli      = new(atomic.Uint64)
 	prevSequenceNumber = new(atomic.Uint32)
+	prevCount          = new(atomic.Uint32)
 )
 
 // NewV7 generates a new version 7 UUID.
@@ -97,7 +97,7 @@ func NewV7() UUID {
 	uuid[7] = byte(sequenceNumber)
 
 	// Set version 7 bits into bits 49 to 52
-	uuid[6] = (uuid[6] & 0b01111111) | 0b01110000
+	uuid[6] = setVersion7Bits(uuid[6])
 
 	// Get buffer to store random bits from pool
 	randBufPtr, _ := version7Pool.Get().(*[]byte)
@@ -113,30 +113,31 @@ func NewV7() UUID {
 	// Return buffer to pool
 	version7Pool.Put(randBufPtr)
 
-	// Copy count bytes
-	var countBytes [2]byte
-	copy(countBytes[:], uuid[8:9])
+	// Clear variant bits and one extra for overflow.
+	uuid[8] |= 0b0001_1111
 
-	// Remove variant and count overflow bit
-	countBytes[0] &= 0b00011111
-
-	// Get count
-	var count uint16
-	binary.LittleEndian.PutUint16(countBytes[:], count)
-
-	// Increment count if UUID was created in the same timeframe
+	// If UUID was created in the same timeframe as previous
 	if unixMilli == prevUnixMilli.Swap(unixMilli) {
-		slog.Debug("time", "unixMilli", unixMilli, "sequenceNumber", sequenceNumber)
+		// If sequence number of UUID is less than or equal to sequence number of previous UUID
+		prevSeqNum := prevSequenceNumber.Swap(sequenceNumber)
+		if sequenceNumber <= prevSeqNum {
+			// Set sequence number to same as previous
+			uuid[6] = byte(prevSeqNum >> 8)
+			uuid[7] = byte(prevSeqNum)
+			uuid[6] = setVersion7Bits(uuid[6])
 
-		if sequenceNumber <= prevSequenceNumber.Swap(sequenceNumber) {
-			count++
+			// Set overflow rand bits to same as previous + 1.
+			count := prevCount.Swap(uint32(binary.BigEndian.Uint16(uuid[8:10])+1)) + 1
 			uuid[8] = byte(count >> 8)
 			uuid[9] = byte(count)
 		}
+	} else {
+		// Update previous sequence number if UUID was not created in the same timeframe as previous.
+		prevSequenceNumber.Store(sequenceNumber)
 	}
 
 	// Write variant bits into bits 65 and 66
-	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
+	uuid[8] = setVariantBits(uuid[8])
 
 	return UUID(uuid)
 }
@@ -144,7 +145,7 @@ func NewV7() UUID {
 // NewV8 generates a new V8 UUID.
 //
 // It inserts the Unix nano timestamp into the first 64 bits. The precision of this timestamp is platform dependend.
-// It generates fast pseodo-random number using xoshiro256++ algorithm.
+// It generates fast pseodo-random number using math/rand/v2. This is NOT crpytographically secure.
 func NewV8() UUID {
 	uuid := make([]byte, 16)
 
@@ -152,13 +153,13 @@ func NewV8() UUID {
 	binary.BigEndian.PutUint64(uuid[:8], uint64(time.Now().UnixNano()))
 
 	// Set version 8 bits into bits 49 to 52
-	uuid[6] = (uuid[6] & 0b10001111) | 0b10000000
+	uuid[6] = setVersion8Bits(uuid[6])
 
 	// Set last 64 bits to a pseudo-random number determined by xoshiro256++ algorithm
 	binary.BigEndian.PutUint64(uuid[8:], mathrand.Uint64())
 
 	// Write variant bits into bits 65 and 66
-	uuid[8] = (uuid[8] & 0b10111111) | 0b10000000
+	uuid[8] = setVariantBits(uuid[8])
 
 	return UUID(uuid)
 }
@@ -174,11 +175,30 @@ func (uuid UUID) After(other UUID) (bool, error) {
 		return false, ErrNotTimeOrdered
 	case Version7:
 		if uuid.creationTimeV7().Equal(other.creationTimeV7()) {
-			return uuid[6] > other[6], nil
+			// Compare sequence numbers if Unix milli timestamps are equal.
+
+			var uuidSequence [2]byte
+			copy(uuidSequence[:], uuid[6:8])
+			uuidSequence[0] |= 0b0000_1111
+
+			var otherSequence [2]byte
+			copy(otherSequence[:], other[6:8])
+			otherSequence[0] |= 0b0000_1111
+
+			uuidSeqNum := binary.BigEndian.Uint16(uuidSequence[:])
+			otherSeqNum := binary.BigEndian.Uint16(otherSequence[:])
+
+			if uuidSeqNum == otherSeqNum {
+				return binary.BigEndian.Uint16(uuid[8:10]) > binary.BigEndian.Uint16(otherSequence[:]), nil
+			}
+
+			return binary.BigEndian.Uint16(uuidSequence[:]) > binary.BigEndian.Uint16(otherSequence[:]), nil
 		}
 
 		return uuid.creationTimeV7().After(other.creationTimeV7()), nil
 	case Version8:
+		// This uses Unix nano timestamp, which will never be equal for two UUIDs,
+		// because it takes ~50 ns to generate a UUID v8.
 		return uuid.creationTimeV8().After(other.creationTimeV8()), nil
 	default:
 		return false, ErrInvalidVersion
@@ -212,16 +232,14 @@ func (uuid UUID) Version() Version {
 	return Version(uuid[6] >> 4)
 }
 
-func (uuid UUID) CreationTime() (time.Time, error) {
+func (uuid UUID) CreationTime() time.Time {
 	switch uuid.Version() {
-	case Version4:
-		return time.Time{}, ErrNotTimeOrdered
 	case Version7:
-		return uuid.creationTimeV7(), nil
+		return uuid.creationTimeV7()
 	case Version8:
-		return uuid.creationTimeV8(), nil
+		return uuid.creationTimeV8()
 	default:
-		return time.Time{}, ErrInvalidVersion
+		return time.Time{}
 	}
 }
 

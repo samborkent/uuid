@@ -38,7 +38,7 @@ func IsValidString(uuid string) error {
 	// Decode string
 	_, err := hex.Decode(buf, newUUID)
 	if err != nil {
-		return fmt.Errorf("hexadecimal encoding of uuid string: %w", err)
+		return fmt.Errorf("hexadecimal decoding of uuid string: %w", err)
 	}
 
 	return IsValid(buf)
@@ -71,12 +71,10 @@ func IsValid(uuid []byte) error {
 }
 
 func isValidV4(uuid UUID) error {
-	testUUID := uuid
+	uuid[6] &= 0b10111111
+	uuid[8] &= 0b01111111
 
-	testUUID[6] &= 0b10111111
-	testUUID[8] &= 0b01111111
-
-	if binary.LittleEndian.Uint64(testUUID[:]) == 0 {
+	if binary.LittleEndian.Uint64(uuid[:]) == 0 {
 		return errors.New("uuid v4 should have non-zero random bits")
 	}
 
@@ -84,24 +82,18 @@ func isValidV4(uuid UUID) error {
 }
 
 func isValidV7(uuid UUID) error {
-	var timestampBytes [8]byte
-	copy(timestampBytes[:], uuid[:8])
-
 	// Right shift timestamp bytes
-	rightShiftTimestamp(timestampBytes[:])
+	rightShiftTimestamp(uuid[:8])
 
 	// Reject UUIDs from the future
-	if binary.LittleEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixMilli()) {
+	if binary.LittleEndian.Uint64(uuid[:8]) > uint64(time.Now().UnixMilli()) {
 		return errors.New("uuid v7 cannot have a future timestamp")
 	}
 
-	var randBytes [8]byte
-	copy(randBytes[:], uuid[8:])
-
-	randBytes[0] &= 0b01111111
+	uuid[8] &= 0b01111111
 
 	// Check if random bits are filled
-	if binary.LittleEndian.Uint64(randBytes[:]) == 0 {
+	if binary.LittleEndian.Uint64(uuid[8:]) == 0 {
 		return errors.New("uuid v7 should have non-zero random bits")
 	}
 
@@ -109,26 +101,18 @@ func isValidV7(uuid UUID) error {
 }
 
 func isValidV8(uuid UUID) error {
-	var timestampBytes [8]byte
-	copy(timestampBytes[:], uuid[:8])
-
 	// Right shift timestamp bytes
-	rightShiftTimestamp(timestampBytes[:])
-
-	timestampBytes[6] &= 0b01111111
+	rightShiftTimestamp(uuid[:8])
 
 	// Reject UUIDs from the future
-	if binary.LittleEndian.Uint64(timestampBytes[:]) > uint64(time.Now().UnixNano()) {
+	if binary.LittleEndian.Uint64(uuid[:8]) > uint64(time.Now().UnixNano()) {
 		return errors.New("uuid v8 cannot have a future timestamp")
 	}
 
-	var randBytes [8]byte
-	copy(randBytes[:], uuid[8:])
-
-	randBytes[0] &= 0b01111111
+	uuid[8] &= 0b01111111
 
 	// Check if random bits are filled
-	if binary.LittleEndian.Uint64(randBytes[:]) == 0 {
+	if binary.LittleEndian.Uint64(uuid[8:]) == 0 {
 		return errors.New("uuid v8 should have non-zero random bits")
 	}
 
