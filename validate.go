@@ -74,7 +74,7 @@ func isValidV4(uuid UUID) error {
 	uuid[6] &= 0b10111111
 	uuid[8] &= 0b01111111
 
-	if binary.LittleEndian.Uint64(uuid[:]) == 0 {
+	if binary.BigEndian.Uint64(uuid[:]) == 0 {
 		return errors.New("uuid v4 should have non-zero random bits")
 	}
 
@@ -85,9 +85,11 @@ func isValidV7(uuid UUID) error {
 	// Right shift timestamp bytes
 	rightShiftTimestamp(uuid[:8])
 
-	// Reject UUIDs from the future
-	if binary.LittleEndian.Uint64(uuid[:8]) > uint64(time.Now().UnixMilli()) {
-		return errors.New("uuid v7 cannot have a future timestamp")
+	extractedTime := time.UnixMilli(int64(binary.BigEndian.Uint64(uuid[:8]))).UTC()
+
+	// Reject UUIDs with invalid time
+	if extractedTime.Before(time.Time{}) || extractedTime.IsZero() || extractedTime.After(time.Now().UTC()) {
+		return fmt.Errorf("uuid v7 contains invalid timestamp: %s", extractedTime.Format(time.RFC3339Nano))
 	}
 
 	uuid[8] &= 0b01111111
@@ -101,18 +103,19 @@ func isValidV7(uuid UUID) error {
 }
 
 func isValidV8(uuid UUID) error {
-	// Right shift timestamp bytes
-	rightShiftTimestamp(uuid[:8])
+	uuid[6] |= 0b0111_1111
 
-	// Reject UUIDs from the future
-	if binary.LittleEndian.Uint64(uuid[:8]) > uint64(time.Now().UnixNano()) {
-		return errors.New("uuid v8 cannot have a future timestamp")
+	extractedTime := time.UnixMicro(int64(binary.BigEndian.Uint64(uuid[:8])) / 1000).UTC()
+
+	// Reject UUIDs from invalid time
+	if extractedTime.Before(time.Time{}) || extractedTime.IsZero() || extractedTime.After(time.Now().UTC()) {
+		return fmt.Errorf("uuid v7 contains invalid timestamp: %s", extractedTime.Format(time.RFC3339Nano))
 	}
 
 	uuid[8] &= 0b01111111
 
 	// Check if random bits are filled
-	if binary.LittleEndian.Uint64(uuid[8:]) == 0 {
+	if binary.BigEndian.Uint64(uuid[8:]) == 0 {
 		return errors.New("uuid v8 should have non-zero random bits")
 	}
 
