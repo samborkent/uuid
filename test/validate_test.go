@@ -6,6 +6,14 @@ import (
 	"github.com/samborkent/uuid"
 )
 
+func TestIsValidV7(t *testing.T) {
+	testUUID := "01915146-80e1-741e-a983-6cbdd7c69015"
+
+	if err := uuid.IsValidString(testUUID); err != nil {
+		t.Errorf("uuid is invalid: %s", err.Error())
+	}
+}
+
 func BenchmarkIsValidV4(t *testing.B) {
 	uuidV4 := uuid.NewV4()
 
